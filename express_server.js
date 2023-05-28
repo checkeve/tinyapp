@@ -40,6 +40,11 @@ app.get("/urls/new", (req, res) => {
   res.render("urls_new");
 });
 
+app.post("/login", (req, res) => {
+  res.cookie("username", req.body.username);
+  res.redirect("/urls");
+})
+
 app.post("/urls", (req, res) => {
   console.log(req.body); // Log the POST request body to the console
   const id = generateRandomString();
