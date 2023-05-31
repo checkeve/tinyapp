@@ -53,6 +53,10 @@ app.get("/urls/new", (req, res) => {
   res.render("urls_new", templateVars);
 });
 
+app.get("/register", (req, res) => {
+  res.render("urls_register")
+})
+
 app.post("/login", (req, res) => {
   //from lecture
   const username = req.body.username;
