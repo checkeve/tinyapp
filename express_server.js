@@ -17,7 +17,7 @@ app.use(express.urlencoded({ extended: true })); //creates and populates req.bod
 app.use(cookieParser());
 
 //function to generate random 6 character id for a new longURL
-function generateRandomString() {
+const generateRandomString = function() {
   const chars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
   let randomString = ""
   for (let i = 0; i < 6; i++) {
@@ -25,6 +25,16 @@ function generateRandomString() {
     randomString += chars[randomNum];
   }
   return randomString
+}
+
+const getUserByEmail = function(email) {
+  for (const userId in users) {
+    const user = users[userId];
+    if (user.email === email) {
+      return true;
+    }
+  } 
+  return null;
 }
 
 //Code to test that server is working
@@ -69,15 +79,22 @@ app.get("/register", (req, res) => {
 })
 
 app.post("/register", (req, res) => {
-  const randomID = generateRandomString();
-  users[randomID]  = {
-    id: randomID,
-    email: req.body.username,
-    password: req.body.password
+  const email = req.body.username;
+  const password = req.body.password;
+  if (email === "" || password === "") {
+    return res.status(400).send('You must provide a username and password to register');
+  } else if (getUserByEmail(email)) {
+    return res.status(400).send("The email provided is already registered");
+  } else {
+    const randomID = generateRandomString();
+    users[randomID]  = {
+      id: randomID,
+      email,
+      password
+    }
+    res.cookie("user_id", randomID)
+    res.redirect("/urls");
   }
-  console.log(users);
-  res.cookie("user_id", randomID)
-  res.redirect("/urls");
 })
 
 app.post("/login", (req, res) => {
