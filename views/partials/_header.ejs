@@ -20,13 +20,10 @@
       <!-- lookup user in users object using userid cooke value -->
         <% if (!user) { %>
           <form method="POST" action="/login">
-            <input
-            type="text" 
-            name= "username"
-            placeholder="Username"
-            style="width: 300px; margin: 1em"
-            />
             <button type="submit">Login</button>
+          </form>
+          <form method="POST" action="/gotoregister">
+            <button type="submit">Register</button>
           </form>
         <% } else { %>
           <p>Logged in as: <%= user.email %></p>

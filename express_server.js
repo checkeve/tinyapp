@@ -1,6 +1,9 @@
 //constants
 const express = require("express");
 const cookieParser = require('cookie-parser')
+//lecture
+// const bcrypt = require('bcrypt.js');
+// const cookieSession = require('cookie-session');
 const app = express();
 const PORT = 8080; // default port 8080
 const urlDatabase = {
@@ -15,6 +18,14 @@ app.set("view engine", "ejs");
 //middleware
 app.use(express.urlencoded({ extended: true })); //creates and populates req.body
 app.use(cookieParser());
+// app.use(morgan('dev'));
+// app.use(cookieSession({
+//   name: 'authentication-app-session-cookie',
+//   keys: ['hatgkpnflgneksgllr35nf3'],
+//   //Cookie options
+//   maxAge: 24 * 60 * 60 *1000 //24 hours
+// }));
+
 
 //function to generate random 6 character id for a new longURL
 const generateRandomString = function() {
@@ -50,6 +61,8 @@ const getUserByEmail = function(email) {
 //   res.send("<html><body>Hello <b>World</b></body></html>\n");
 // });
 
+
+//Display of urls form
 app.get("/urls", (req, res) => {
   const templateVars = {
     urls: urlDatabase,
@@ -78,9 +91,17 @@ app.get("/register", (req, res) => {
   res.render("urls_register")
 })
 
+app.post("/gotoregister", (req, res) => {
+  res.redirect("/register")
+})
+
 app.post("/register", (req, res) => {
   const email = req.body.username;
   const password = req.body.password;
+  //comments are from lecture
+  // const salt = bcrypt.genSaltSync(10);
+  // const hash = bcrypt.hashSync(password, salt);
+
   if (email === "" || password === "") {
     return res.status(400).send('You must provide a username and password to register');
   } else if (getUserByEmail(email)) {
@@ -90,80 +111,34 @@ app.post("/register", (req, res) => {
     users[randomID]  = {
       id: randomID,
       email,
-      password
+      password // password: hash;
     }
     res.cookie("user_id", randomID)
     res.redirect("/urls");
   }
 })
 
-app.post("/login", (req, res) => {
-  //from lecture
-  const username = req.body.username;
-  // const password = req.body. password;
-
-  // if (!username || !password) {
-  //   res.status(400);
-  //   return res.send('You must provide a username and password');
-  // }
-  //check database of registered users
-  // const users = {
-  //   abc: {
-  //     id: "abc",
-  //     username: "alice",
-  //     password: "123",
-  //   },
-  //   def: {
-  //     id: "def",
-  //     username: "bob",
-  //     password: "456",
-  //   }
-  //   }
-  // }
-
-  //lookup user in database
-  // foundUser = null;
-  // for (const userId in users) {
-  //   const user = users[userId];
-  //   if (user.username === username) {
-  //     foundUser = user;
-  //   }
-  // }
-  // if (!foundUser) {
-  //   return res.status(400).send("No user with that username was found");
-  // }
-  //at this point we know if the username is in the database or not
-  //are the passwords NOT the same?
-  // if (foundUser.password != password) {
-  //   return res.status(400).send('the passwords do not match');
-  // }
-
-  //my working code
-  res.cookie("username", username);
-  res.redirect("/urls");
-
-
-  //or (from lecture)
-  // res.cookie('user', foundUser.id);
-  // res.redirect('/protected');
+app.get("/login", (req, res) => {
+  res.render("urls_login")
 })
 
-//from lecture
-// app.get('/protected', (req, res) => {
-//   //grab the userId from the cookie
-//   const userId = req.cookies.userId;
-//   //do they not have a cookie?
-//   if (!userId) {
-//     res.status(401).send('you must have a cookie to see this page');
+app.post("/login", (req, res) => {
+  //previous working
+  // const username = req.body.username;
+  // res.cookie("username", username);
+  // res.redirect("/urls");
+
+  //lecture
+//   if(!bcrypt.compareSync(password, foundUser.password)) {
+//     res.send
 //   }
-//   const user = users[userId];
-//   templateVars = {};
-//   res.redirect("", templateVars)
 
-// })
+  res.redirect("/login")
 
+})
 
 
+//Submssion of logout form
 app.post("/logout", (req, res) => {
   res.clearCookie("username");
   res.redirect("/urls");
@@ -202,6 +177,8 @@ app.post("/urls/:id/delete", (req, res) => {
   res.redirect("/urls")
 });
 
+
+//Listener (generate server)
 app.listen(PORT, () => {
   console.log(`Example app listening on port ${PORT}!`);
 });
