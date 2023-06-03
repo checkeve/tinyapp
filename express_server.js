@@ -7,8 +7,14 @@ const cookieParser = require('cookie-parser');
 const app = express();
 const PORT = 8080; // default port 8080
 const urlDatabase = {
-  "b2xVn2": "http://www.lighthouselabs.ca",
-  "9sm5xK": "http://www.google.com"
+  b6UTxQ: {
+    longURL: "https://www.tsn.ca",
+    userID: "sNntWA",
+  },
+  i3BoGr: {
+    longURL: "https://www.google.ca",
+    userID: "sNntWX",
+  },
 };
 const users = {};
 
@@ -26,7 +32,7 @@ app.use(cookieParser());
 //   maxAge: 24 * 60 * 60 *1000 //24 hours
 // }));
 
-
+//****FUNCTIONS****
 //function to generate random 6 character id for a new longURL
 const generateRandomString = function() {
   const chars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
@@ -49,6 +55,17 @@ const getUserByEmail = function(email) {
   return null;
 };
 
+const urlsForUser = function(id) {
+  const userObj = {};
+  for (const url in urlDatabase) {
+    const obj = urlDatabase[url];
+    if (obj.userID === id) {
+      userObj[url] = obj.longURL;
+    }
+  }
+  return userObj;
+};
+
 //Code to test that server is working
 // app.get("/", (req, res) => {
 //   res.send("Hello!");
@@ -65,22 +82,27 @@ const getUserByEmail = function(email) {
 
 //Display of urls form
 app.get("/urls", (req, res) => {
+  if (!req.cookies.user_id) {
+    res.status(401).send("<h1>Please <a href='http://localhost:8080/login'>login</a> to access this page</h1>")
+  }
   const templateVars = {
-    urls: urlDatabase,
+    urls: urlsForUser(req.cookies.user_id),
     user: users[req.cookies.user_id]
   };
+  console.log(urlsForUser(req.cookies.user_id))
   res.render("urls_index", templateVars);
 });
 
-//Submission of urls form
+//Submission of urls form (for adding a new url)
 app.post("/urls", (req, res) => {
   if (!req.cookies.user_id) {
     res.status(401).send("You must be logged in to shorten URLs")
-    console.log(urlDatabase)
   }
-  console.log(req.body); // Log the POST request body to the console
   const id = generateRandomString();
-  urlDatabase[id] = req.body.longURL; //add new url and random string to urlDatabase
+  urlDatabase[id] = {
+    longURL: req.body.longURL,
+    userID: req.cookies.user_id
+  }
   res.redirect(`/urls/${id}`);
 });
 
@@ -175,41 +197,64 @@ app.post("/logout", (req, res) => {
   res.redirect("/login");
 });
 
+//Display urls/:id form
 app.get("/urls/:id", (req, res) => {
-  if (urlDatabase[req.params.id]) {
+  const userObj = urlsForUser(req.cookies.user_id)
+  if (userObj[req.params.id]) {
     const templateVars = {
       id: req.params.id, 
-      longURL: urlDatabase,
+      longURL: userObj[req.params.id],
       user: users[req.cookies.user_id]
     };
+    console.log("longurl", templateVars.longURL)
     res.render("urls_show", templateVars);
   } else {
-    res.status(400).send("The page you requested does not exist")
+    res.status(401).send("This URL has not been stored in your shortened urls and cannot display")
   }
-
-
 });
 
+//Display u/:id form (actual website of longURL)
 app.get("/u/:id", (req, res) => {
   const longURL = urlDatabase[req.params.id];
   res.redirect(longURL);
 });
 
+//Submit urls/:id/edit form (edit button on main page)
 app.post("/urls/:id/edit", (req, res) => {
   const id = req.params.id;
   res.redirect(`/urls/${id}`);
 });
 
+//Submit urls/:id form (submit edit of exisiting longURL)
 app.post("/urls/:id", (req, res) => {
   const id = req.params.id;
-  urlDatabase[id] = req.body.newURL;
+  const userObj = urlsForUser(req.cookies.user_id);
+  if (!urlDatabase[id]) {
+    res.status(404).send("This page does not exist")
+  } else if (!req.cookies.user_id) {
+    res.status(401).send("<h1>Please <a href='http://localhost:8080/login'>login</a> to access this page</h1>")
+  } else if (!userObj[id]) {
+    res.status(401).send("This URL has not been stored in your shortened urls and you cannot make changes to it.")
+  } else {
+    urlDatabase[id].longUrl = req.body.newURL;
   res.redirect("/urls");
+  }
 });
 
+//Submit urls/:id/delete (delete button on main page)
 app.post("/urls/:id/delete", (req, res) => {
   const id = req.params.id;
-  delete urlDatabase[id];
-  res.redirect("/urls")
+  const userObj = urlsForUser(req.cookies.user_id);
+  if (!urlDatabase[id]) {
+    res.status(404).send("This page does not exist")
+  } else if (!req.cookies.user_id) {
+    res.status(401).send("<h1>Please <a href='http://localhost:8080/login'>login</a> to access this page</h1>")
+  } else if (!userObj[id]) {
+    res.status(401).send("This URL has not been stored in your shortened urls and you cannot delete it.")
+  } else {
+    delete urlDatabase[id].longUrl;
+    res.redirect("/urls");
+  } 
 });
 
 
