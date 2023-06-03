@@ -1,4 +1,4 @@
-//function to find object of individual user's information inside users object
+//function to find user with provided email
 const getUserByEmail = function(email, database) {
   for (const userId in database) {
     const user = database[userId];
