@@ -2,7 +2,7 @@
 const express = require("express");
 const cookieParser = require('cookie-parser');
 //lecture
-// const bcrypt = require('bcrypt.js');
+const bcrypt = require('bcryptjs');
 // const cookieSession = require('cookie-session');
 const app = express();
 const PORT = 8080; // default port 8080
@@ -13,7 +13,7 @@ const urlDatabase = {
   },
   i3BoGr: {
     longURL: "https://www.google.ca",
-    userID: "sNntWX",
+    userID: "sNntWA",
   },
 };
 const users = {};
@@ -138,6 +138,7 @@ app.get("/register", (req, res) => {
 app.post("/register", (req, res) => {
   const email = req.body.email;
   const password = req.body.password;
+  const hashedPassword = bcrypt.hashSync(password, 10);
   //comments are from lecture
   // const salt = bcrypt.genSaltSync(10);
   // const hash = bcrypt.hashSync(password, salt);
@@ -151,8 +152,9 @@ app.post("/register", (req, res) => {
     users[randomID]  = {
       id: randomID,
       email,
-      password // password: hash;
+      password: hashedPassword
     }
+    console.log(users)
     res.cookie("user_id", randomID);
     res.redirect("/urls");
   }
@@ -176,12 +178,11 @@ app.get("/login", (req, res) => {
 app.post("/login", (req, res) => {
   const email = req.body.email;
   const password = req.body.password;
-  //email cannot be found
   const user = getUserByEmail(email);
   if (!user) {
     res.status(403).send("A user with that e-mail was not found.");
   } else if (user) {
-    if (user.password === password) {
+    if (bcrypt.compareSync(password, user.password)) {
       res.cookie("user_id", user.id);
       res.redirect("/urls");
     } else {
