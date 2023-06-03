@@ -38,6 +38,7 @@ const generateRandomString = function() {
   return randomString;
 };
 
+//function to find object of individual user's information inside users object
 const getUserByEmail = function(email) {
   for (const userId in users) {
     const user = users[userId];
@@ -71,32 +72,47 @@ app.get("/urls", (req, res) => {
   res.render("urls_index", templateVars);
 });
 
+//Submission of urls form
 app.post("/urls", (req, res) => {
+  if (!req.cookies.user_id) {
+    res.status(401).send("You must be logged in to shorten URLs")
+    console.log(urlDatabase)
+  }
   console.log(req.body); // Log the POST request body to the console
   const id = generateRandomString();
   urlDatabase[id] = req.body.longURL; //add new url and random string to urlDatabase
   res.redirect(`/urls/${id}`);
 });
 
+//Display of urls/new form
 app.get("/urls/new", (req, res) => {
-  const templateVars = {
-    user: users[req.cookies.user_id]
-  };
-  res.render("urls_new", templateVars);
+  if (!req.cookies.user_id) {
+    res.redirect("/login")
+  } else {
+    const templateVars = {
+      user: users[req.cookies.user_id]
+    };
+    res.render("urls_new", templateVars);
+  }
 });
 
-app.get("/register", (req, res) => {
-  res.render("urls_register")
-});
-
+//Submit gotoregister form (register button)
 app.post("/gotoregister", (req, res) => {
   res.redirect("/register");
+})
+
+//Display register form
+app.get("/register", (req, res) => {
+  if (req.cookies.user_id) {
+    res.redirect("/urls")
+  } else {
+    res.render("urls_register");
+  }
 });
 
-app.post("/gotologin", (req, res) => {
-  res.redirect("/login");
-});
 
+
+//Submit register form
 app.post("/register", (req, res) => {
   const email = req.body.email;
   const password = req.body.password;
@@ -120,9 +136,18 @@ app.post("/register", (req, res) => {
   }
 });
 
+//Submit gotologin form (login button)
+app.post("/gotologin", (req, res) => {
+  res.redirect("/login");
+});
+
 //Display login form
 app.get("/login", (req, res) => {
-  res.render("urls_login");
+  if (req.cookies.user_id) {
+    res.redirect("/urls")
+  } else {
+    res.render("urls_login");
+  }
 });
 
 //Submission of login form
@@ -151,12 +176,18 @@ app.post("/logout", (req, res) => {
 });
 
 app.get("/urls/:id", (req, res) => {
-  const templateVars = {
-    id: req.params.id, 
-    longURL: urlDatabase,
-    user: users[req.cookies.user_id]
-  };
-  res.render("urls_show", templateVars);
+  if (urlDatabase[req.params.id]) {
+    const templateVars = {
+      id: req.params.id, 
+      longURL: urlDatabase,
+      user: users[req.cookies.user_id]
+    };
+    res.render("urls_show", templateVars);
+  } else {
+    res.status(400).send("The page you requested does not exist")
+  }
+
+
 });
 
 app.get("/u/:id", (req, res) => {
