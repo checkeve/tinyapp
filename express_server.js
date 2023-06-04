@@ -45,7 +45,7 @@ const generateRandomString = function() {
 };
 
 
-//function used to cserach urlDatabase and return object with only urls belonging to user passed into it
+//function used to serach urlDatabase and return object with only urls belonging to user passed into it
 const urlsForUser = function(id) {
   const userObj = {};
   for (const url in urlDatabase) {
@@ -56,20 +56,6 @@ const urlsForUser = function(id) {
   }
   return userObj;
 };
-
-//Code to test that server is working
-// app.get("/", (req, res) => {
-//   res.send("Hello!");
-// });
-
-// app.get("/urls.json", (req, res) => {
-//   res.json(urlDatabase);
-// });
-
-// app.get("/hello", (req, res) => {
-//   res.send("<html><body>Hello <b>World</b></body></html>\n");
-// });
-
 
 //Display of urls form
 app.get("/urls", (req, res) => {
@@ -93,7 +79,7 @@ app.post("/urls", (req, res) => {
     longURL: req.body.longURL,
     userID: req.session.user_id
   };
-  res.redirect(`/urls/${id}`);
+  res.redirect('/urls');
 });
 
 //Display of urls/new form
@@ -129,15 +115,16 @@ app.post("/register", (req, res) => {
   const hashedPassword = bcrypt.hashSync(password, 10);
   if (email === "" || password === "") {
     return res.status(400).send('You must provide a username and password to register');
-  } else if (getUserByEmail(email, urlDatabase)) {
+  } else if (getUserByEmail(email, users)) {
     return res.status(400).send("The email provided is already registered");
   } else {
     const randomID = generateRandomString();
     users[randomID]  = {
       id: randomID,
-      email,
+      email: email,
       password: hashedPassword
     };
+    console.log(users)
     req.session.user_id = randomID;
     res.redirect("/urls");
   }
@@ -161,7 +148,8 @@ app.get("/login", (req, res) => {
 app.post("/login", (req, res) => {
   const email = req.body.email;
   const password = req.body.password;
-  const user = getUserByEmail(email, urlDatabase);
+  const user = getUserByEmail(email, users);
+  console.log(user)
   if (!user) {
     res.status(403).send("A user with that e-mail was not found.");
   } else if (user) {
@@ -175,16 +163,10 @@ app.post("/login", (req, res) => {
 });
 
 
-//Submit of logout form
+//Submit of logout form (logout button)
 app.post("/logout", (req, res) => {
-  req.session.user_id = null;
+  req.session = null;
   res.redirect("/login");
-});
-
-//Submit urls/:id/edit form (edit button on main page)
-app.post("/urls/:id/edit", (req, res) => {
-  const id = req.params.id;
-  res.redirect(`/urls/${id}`);
 });
 
 //Submit urls/:id/delete (delete button on main page)
@@ -198,11 +180,16 @@ app.post("/urls/:id/delete", (req, res) => {
   } else if (!userObj[id]) {
     res.status(401).send("This URL has not been stored in your shortened urls and you cannot delete it.");
   } else {
-    delete urlDatabase[id].longUrl;
+    delete urlDatabase[id];
     res.redirect("/urls");
   } 
 });
 
+//Submit urls/:id/edit form (edit button on main page)
+app.post("/urls/:id/edit", (req, res) => {
+  const id = req.params.id;
+  res.redirect(`/urls/${id}`);
+});
 
 //Display urls/:id form
 app.get("/urls/:id", (req, res) => {
@@ -221,7 +208,8 @@ app.get("/urls/:id", (req, res) => {
 
 //Display u/:id form (actual website of longURL)
 app.get("/u/:id", (req, res) => {
-  const longURL = urlDatabase[req.params.id];
+  const id = req.params.id;
+  const longURL = urlDatabase[id].longURL;
   res.redirect(longURL);
 });
 
@@ -236,7 +224,9 @@ app.post("/urls/:id", (req, res) => {
   } else if (!userObj[id]) {
     res.status(401).send("This URL has not been stored in your shortened urls and you cannot make changes to it.");
   } else {
-    urlDatabase[id].longUrl = req.body.newURL;
+    console.log(urlDatabase)
+    urlDatabase[id].longURL = req.body.newURL;
+    console.log(urlDatabase)
     res.redirect("/urls");
   }
 });
