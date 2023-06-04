@@ -124,7 +124,6 @@ app.post("/register", (req, res) => {
       email: email,
       password: hashedPassword
     };
-    console.log(users)
     req.session.user_id = randomID;
     res.redirect("/urls");
   }
@@ -149,7 +148,6 @@ app.post("/login", (req, res) => {
   const email = req.body.email;
   const password = req.body.password;
   const user = getUserByEmail(email, users);
-  console.log(user)
   if (!user) {
     res.status(403).send("A user with that e-mail was not found.");
   } else if (user) {
@@ -224,9 +222,7 @@ app.post("/urls/:id", (req, res) => {
   } else if (!userObj[id]) {
     res.status(401).send("This URL has not been stored in your shortened urls and you cannot make changes to it.");
   } else {
-    console.log(urlDatabase)
     urlDatabase[id].longURL = req.body.newURL;
-    console.log(urlDatabase)
     res.redirect("/urls");
   }
 });
